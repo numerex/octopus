@@ -51,6 +51,14 @@ module Octopus::Model
     end
 
     def hijack_connection()
+      def self.current_shard
+        if should_use_normal_connection?
+          :master
+        else
+          connection_with_octopus.current_shard
+        end
+      end
+
       def self.should_use_normal_connection?
         !Octopus.enabled? || self.custom_octopus_connection?
       end

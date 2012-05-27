@@ -174,7 +174,15 @@ class Octopus::Proxy
     elsif should_send_queries_to_replicated_databases?(method)
       send_queries_to_selected_slave(method, *args, &block)
     else
-      select_connection().send(method, *args, &block)
+      begin
+        select_connection().send(method, *args, &block)
+      rescue
+        if current_shard == :master
+          raise $!
+        else
+          send_queries_to_master(method,*args,&block)
+        end
+      end
     end
   end
 
@@ -206,6 +214,16 @@ class Octopus::Proxy
 
   def should_send_queries_to_replicated_databases?(method)
     @replicated && method.to_s =~ /select/ && !@block
+  end
+
+  def send_queries_to_master(method, *args, &block)
+    old_shard = self.current_shard
+    begin
+      self.current_shard = :master
+      select_connection.send(method, *args, &block)
+    ensure
+      self.current_shard = old_shard
+    end
   end
 
   def send_queries_to_selected_slave(method, *args, &block)
