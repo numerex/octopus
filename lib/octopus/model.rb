@@ -95,7 +95,7 @@ module Octopus::Model
     include SharedMethods
 
     def should_set_current_shard?
-      self.respond_to?(:current_shard) && !self.current_shard.nil?
+      self.respond_to?(:current_shard) && !self.current_shard.nil? && self.current_shard != :master
     end
 
     def reload_connection_safe(&block)
