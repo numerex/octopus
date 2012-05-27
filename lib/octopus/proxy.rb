@@ -32,22 +32,23 @@ class Octopus::Proxy
 
     shards_config.each do |key, value|
       if value.has_key?("adapter")
-        initialize_adapter(value['adapter'])
-        @shards[key.to_sym] = connection_pool_for(value, "#{value['adapter']}_connection")
+        @shards[key.to_sym] = prepare_connection_pool(value,key)
       else
         @groups[key.to_s] = []
 
         value.each do |k, v|
           raise "You have duplicated shard names!" if @shards.has_key?(k.to_sym)
 
-          initialize_adapter(v['adapter'])
-          config_with_octopus_shard = v.merge(:octopus_shard => k)
-
-          @shards[k.to_sym] = connection_pool_for(config_with_octopus_shard, "#{v['adapter']}_connection")
+          @shards[k.to_sym] = prepare_connection_pool(v,k)
           @groups[key.to_s] << k.to_sym
         end
       end
     end
+  end
+
+  def prepare_connection_pool(config,shard_name)
+    initialize_adapter(config['adapter'])
+    connection_pool_for(config.merge(:octopus_shard => shard_name), "#{config['adapter']}_connection")
   end
 
   def initialize_replication(config)
