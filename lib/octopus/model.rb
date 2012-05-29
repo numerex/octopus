@@ -34,7 +34,9 @@ module Octopus::Model
       before_save :reload_connection
 
       def set_current_shard
-        if new_record? || self.class.connection_proxy.block
+        if self.class.should_use_normal_connection?
+          self.current_shard = :master
+        elsif new_record? || self.class.connection_proxy.block
           self.current_shard = self.class.connection_proxy.current_shard
         else
           self.current_shard = self.class.connection_proxy.last_current_shard
