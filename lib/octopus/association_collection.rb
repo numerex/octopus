@@ -1,16 +1,20 @@
 module Octopus::AssociationCollection
 
   def self.included(base)
-    if Octopus.rails31?
-      base.instance_eval do
+    base.instance_eval do
+      if Octopus.rails31?
         alias_method_chain :reader, :octopus
         alias_method_chain :writer, :octopus
         alias_method_chain :ids_reader, :octopus
         alias_method_chain :ids_writer, :octopus
-        alias_method_chain :create, :octopus
-        alias_method_chain :create!, :octopus
         alias_method_chain :build, :octopus
+      else
+        attr_reader :owner
       end
+
+      # TODO should more non-Rails31 methods included here? -- should more be "wrapped"?
+      alias_method_chain :create, :octopus
+      alias_method_chain :create!, :octopus
     end
   end
 
@@ -40,17 +44,29 @@ module Octopus::AssociationCollection
   end
 
   def create_with_octopus(*args, &block)
-    owner.reload_connection
-    create_without_octopus(*args, &block)
+    possibly_wrap_connection do
+      owner.reload_connection
+      create_without_octopus(*args, &block)
+    end
   end
 
   def create_with_octopus!(*args, &block)
-    owner.reload_connection
-    create_without_octopus!(*args, &block)
+    possibly_wrap_connection do
+      owner.reload_connection
+      create_without_octopus!(*args, &block)
+    end
   end
 
   def should_wrap_the_connection?
     @owner.respond_to?(:current_shard) && @owner.current_shard != nil
+  end
+
+  def possibly_wrap_connection(&block)
+    if should_wrap_the_connection?
+      Octopus.using(@owner.current_shard) { yield }
+    else
+      yield
+    end
   end
 
   def count(*args)
