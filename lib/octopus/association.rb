@@ -7,9 +7,7 @@ module Octopus::Association
     def set_connection_on_association(record)
       return if !self.connection.respond_to?(:current_shard) || !self.respond_to?(:current_shard)
       if !record.current_shard.nil? && !self.current_shard.nil? && record.current_shard != self.current_shard
-        # TODO find a fix for this...
-        #raise "Association Error: Records are from different shards"
-        ActiveRecord::Base.logger.info "WARNING: #{record.class} is #{record.current_shard} and connection is #{self.current_shard}!"
+        raise "Association Error: Records are from different shards"
       end
 
       record.current_shard = self.connection.current_shard = self.current_shard if should_set_current_shard?
