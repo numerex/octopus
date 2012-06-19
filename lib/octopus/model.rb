@@ -36,8 +36,6 @@ module Octopus::Model
       def set_current_shard
         if self.class.should_use_normal_connection?
           self.current_shard = :master
-          #make sure connection_proxy gets called to start Octopus
-          self.class.connection_proxy
         elsif new_record? || self.class.connection_proxy.block
           self.current_shard = self.class.connection_proxy.current_shard
         else
