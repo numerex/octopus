@@ -43,6 +43,20 @@ module Octopus
         end
       end
       
+      def save(*)
+        possibly_wrap_connection do
+          reload_connection()
+          super
+        end
+      end
+      
+      def save!(*)
+        possibly_wrap_connection do
+          reload_connection()
+          super
+        end
+      end
+      
       def should_wrap_the_connection?
         respond_to?(:current_shard) && current_shard != nil
       end
